@@ -20,6 +20,11 @@ from math import sin, cos, pi, sqrt
 import functools
 from graphics import hls_to_rgb
 
+
+def cmp(a, b):
+    return (a > b) - (a < b)
+
+
 class Data(object):
     def __getattribute__(self, attr):
         try:
@@ -55,9 +60,9 @@ class Rect(object):
     def __add__(self, other):
         if other is None:
             return self
-        zipped = zip(self.coords, other.coords)
-        lt = map(min, zipped[:2])
-        rb = map(max, zipped[2:])
+        zipped = list(zip(self.coords, other.coords))
+        lt = list(map(min, zipped[:2]))
+        rb = list(map(max, zipped[2:]))
         return Rect(*(lt + rb))
 
     def __radd__(self, other):
@@ -88,7 +93,7 @@ class Ball(object):
     def project(self, worldview):
         rad_y = worldview.angle_y * pi / 180
         rad_x = worldview.angle_x * pi / 180
-        x1, y1, z1 = (self.center[i] - worldview.rotation_center[i] for i in xrange(3))
+        x1, y1, z1 = (self.center[i] - worldview.rotation_center[i] for i in range(3))
         x2 = x1 * cos(rad_y) - z1 * sin(rad_y)
         y2 = y1
         z2 = x1 * sin(rad_y) + z1 * cos(rad_y)
@@ -108,7 +113,7 @@ class Ball(object):
         x2 = x1 * cos(rad) - y1 * sin(rad)
         y2 = x1 * sin(rad) + y1 * cos(rad)
         z2 = z1
-        self.center = tuple((x2, y2, z2)[reverse[i]] + other.center[i] for i in xrange(3))
+        self.center = tuple((x2, y2, z2)[reverse[i]] + other.center[i] for i in range(3))
            
     def set_distance(self, distance, other):
         """Move this ball to have the given distance to "other" while not changing the
@@ -170,7 +175,7 @@ class Bone(object):
         # hence the following step. without it, the eye/iris gradient sometimes
         # only has two or three steps
         steps = max(steps, abs(self[0].radius - self[1].radius))
-        colors = zip(self[0].color, self[1].color)
+        colors = list(zip(self[0].color, self[1].color))
 
         # the old way is faster for smaller images, the new one for larger ones.
         # This table shows test measurings. Note that the size is the final size,
@@ -187,7 +192,7 @@ class Bone(object):
                 image.connect_circles((x1, y1), self[0].radius, self[0].color, (x2, y2), self[1].radius, self[1].color)
                 return 
 
-        for step in xrange(int(steps + 1)):
+        for step in range(int(steps + 1)):
             factor = float(step) / steps
             color = tuple(map(int, (calc(c[0], c[1], factor) for c in colors)))
             x, y, r = calc(x1, x2, xfunc(factor)), calc(y1, y2, yfunc(factor)), calc(self[0].radius, self[1].radius, factor)
@@ -364,7 +369,7 @@ class Figure(object):
         # this is pretty much the algorithm from http://stackoverflow.com/questions/952302/
         sorted_things = []
         queue = []
-        for thing, deps in draw_after.items():
+        for thing, deps in list(draw_after.items()):
             if not deps:
                 queue.append(thing)
                 del draw_after[thing]
@@ -373,7 +378,7 @@ class Figure(object):
             while queue:
                 popped = queue.pop()
                 sorted_things.append(popped)
-                for thing, deps in draw_after.items():
+                for thing, deps in list(draw_after.items()):
                     if popped in deps:
                         deps.remove(popped)
                         if not deps:
@@ -385,12 +390,12 @@ class Figure(object):
                 # we remove the ball / bone which lies farthest in the back
                 # and try again
 
-                least_evil = min((thing for thing in draw_after.iterkeys()),
+                least_evil = min((thing for thing in draw_after.keys()),
                                  key = evilness
                                 )
                 sorted_things.append(least_evil)
                 del draw_after[least_evil]
-                for thing, deps in draw_after.items():
+                for thing, deps in list(draw_after.items()):
                     if least_evil in deps:
                         deps.remove(least_evil)
                         if not deps:

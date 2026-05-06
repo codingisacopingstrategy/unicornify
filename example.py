@@ -1,7 +1,7 @@
 import hashlib
 from avatar import create_avatar
 
-hash = hashlib.md5("your.email@address.here").hexdigest()
+hash = hashlib.md5(b"your.email@address.here").hexdigest()
 
 # Creates a BMP file of 256x256 pixels (see docstring of create_avatar)
 f = open("unicorn.bmp", "wb")

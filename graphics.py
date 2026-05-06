@@ -42,7 +42,7 @@ class SquareImage(object):
     @classmethod
     def plain(cls, size, color):
         self = object.__new__(cls)
-        self._image = [[color] * size for y in xrange(size)]
+        self._image = [[color] * size for y in range(size)]
         self.size = size
         self.s = size - 1
         return self
@@ -52,7 +52,7 @@ class SquareImage(object):
         s = size - 1
         def color(y):
             return tuple(t + d * y // s for t, d in zip(top_color, delta))
-        self._image = [[color(y)] * size for y in xrange(size)]
+        self._image = [[color(y)] * size for y in range(size)]
         self.size = size
         self.s = s
 
@@ -81,8 +81,8 @@ class SquareImage(object):
             x1 = s
         x0 = max(0, int(x0))
         x1 = min(s, int(x1)) + 1
-        line = [blend(color1, color2, (x - x0) / float(x1 - x0)) for x in xrange(x0, x1)]
-        for y in xrange(int(y0 + .5), int(y1 + 1.5)):
+        line = [blend(color1, color2, (x - x0) / float(x1 - x0)) for x in range(x0, x1)]
+        for y in range(int(y0 + .5), int(y1 + 1.5)):
             self._image[y][x0:x1] = line
     
     def restore_hor_line(self, x0, x1, y):
@@ -133,15 +133,15 @@ class SquareImage(object):
 
     def connect_circles(self, center1, radius1, color1, center2, radius2, color2):
         # see Bone.draw() in core.py for some notes on performance of this algorithm
-        center1 = map(int, center1)
-        center2 = map(int, center2)
+        center1 = list(map(int, center1))
+        center2 = list(map(int, center2))
         radius1, radius2 = int(radius1), int(radius2)
         xmin = int(max(0, min(center1[0] - radius1, center2[0] - radius2)))
         xmax = int(min(self.s, max(center1[0] + radius1, center2[0] + radius2)))
         ymin = int(max(0, min(center1[1] - radius1, center2[1] - radius2)))
         ymax = int(min(self.s, max(center1[1] + radius1, center2[1] + radius2)))
         
-        col = [tuple(int(v[0] + fac * (v[1] - v[0]) / 255) for v in zip(color1, color2)) for fac in xrange(256)]
+        col = [tuple(int(v[0] + fac * (v[1] - v[0]) / 255) for v in zip(color1, color2)) for fac in range(256)]
         
         d = radius2 - radius1
         vx = center2[0] - center1[0]
@@ -150,15 +150,15 @@ class SquareImage(object):
         r1d = radius1 * d
         r1s = radius1 ** 2
         c2x = center2[0]
-        d2xs = dict((x, (x - c2x)**2) for x in xrange(xmin, xmax + 1))
+        d2xs = dict((x, (x - c2x)**2) for x in range(xmin, xmax + 1))
         
-        for y in xrange(ymin, ymax + 1):
+        for y in range(ymin, ymax + 1):
             line = self._image[y]
             dy = y - center1[1]
             b_ = vy * dy + r1d
             c_ = dy**2 - r1s
             r2sdy2s = radius2**2 - (y - center2[1])**2
-            for x in xrange(xmin, xmax + 1):
+            for x in range(xmin, xmax + 1):
                 dx = x - center1[0]
                 
                 b = -2 *(vx * dx + b_)
@@ -231,7 +231,7 @@ class SquareImage(object):
         
         scanline_struct = struct.Struct("%dB%dx" % (3 * self.size, padding))
         def data_iterator():
-            yield struct.pack("<2s6I2H6I", "BM", total_size, 0, 54, 40, self.size, self.size, 1, 24, 0, bitmap_data_size, 2835, 2835, 0, 0)
+            yield struct.pack("<2s6I2H6I", b"BM", total_size, 0, 54, 40, self.size, self.size, 1, 24, 0, bitmap_data_size, 2835, 2835, 0, 0)
             for line in reversed(self._image):
                 yield scanline_struct.pack(*(val for col in line for val in reversed(col)))
-        return "".join(data_iterator())
+        return b"".join(data_iterator())

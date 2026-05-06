@@ -179,7 +179,7 @@ class UnicornData(Data):
         #self.pose_upright = randint(20, 80) / 100.0
         self.hair_hue = (self.body_hue + randint(60, 300)) % 360
         self.hair_sat = randint(60, 100)
-        self.hair_starts = [randint(-20, 100) for i in xrange(randint(12, 30))]
+        self.hair_starts = [randint(-20, 100) for i in range(randint(12, 30))]
         self.hair_gammas = [.3 + random()*3 for h in self.hair_starts]
         self.hair_lengths = [randint(80, 150) for h in self.hair_starts]
         self.hair_angles = [randint(00, 60) for h in self.hair_starts]
@@ -197,12 +197,12 @@ class UnicornData(Data):
         self.brow_length = 2 + random()*3
         self.brow_mood = 2 * random() - 1
         self.neck_tilt = randint(-30, 30)
-        self.face_tilt = randint(*sorted((self.neck_tilt / 3, self.neck_tilt / 4)))
+        self.face_tilt = randint(*sorted((self.neck_tilt // 3, self.neck_tilt // 4)))
         
     def randomize3(self, randomizer):
         randint, random, choice = randomizer.randint, randomizer.random, randomizer.choice
 
-        self.pose_kind = choice(pose_functions.keys())
+        self.pose_kind = choice(list(pose_functions.keys()))
         self.pose_phase = random()
 
 def gammafunc(gamma):

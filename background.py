@@ -53,7 +53,7 @@ class BackgroundData(Data):
     def randomize2(self, randomizer):
         choice, randint, random = randomizer.choice, randomizer.randint, randomizer.random
         
-        self.cloud_positions = [(random(), (.3 + random() * .6) * self.horizon) for i in xrange(randint(1, 3))]
+        self.cloud_positions = [(random(), (.3 + random() * .6) * self.horizon) for i in range(randint(1, 3))]
         self.cloud_sizes = [(random()*.04 + .02, random()*.7 + 1.3) for c in self.cloud_positions]
         self.cloud_lightnesses = [randint(75, 90) for c in self.cloud_positions]
 
@@ -69,7 +69,7 @@ def get_background(size, data): #return size is 2*size!
     
     im.save()        
         
-    for w in xrange(7):
+    for w in range(7):
         col = hls_to_rgb(w * 45, 50, 100)
         im.circle(center, outer_radius - w * delta, col)
 
@@ -94,6 +94,6 @@ def cloud(img, pos, size1, size2, color):
     img.circle((x - 2 * size1, y - size1 - 1), size1, color)
     img.circle((x + 2 * size1, y - size1 - 1), size1, color)
     img.top_half_circle((x, y-size1), size2, color)
-    for ly in xrange(y - size1, y + 1):
+    for ly in range(y - size1, y + 1):
         img.hor_line(color, x - 2 * size1, x + 2 * size1, ly)
         
