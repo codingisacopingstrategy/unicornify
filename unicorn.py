@@ -1,21 +1,21 @@
 # Copyright 2010 Benjamin Dumke
-# 
+#
 # This file is part of Unicornify
-# 
+#
 # Unicornify is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
-# 
+#
 # Unicornify is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
-# 
+#
 # You should have received a copy of the NU Affero General Public License
 # along with Unicornify; see the file COPYING. If not, see
 # <http://www.gnu.org/licenses/>.
-    
+
 from core import Ball, Bone, Figure, NonLinBone, Data
 import math
 
@@ -26,7 +26,7 @@ def pose(name):
         pose_functions[name] = f
         return f
     return decorator
-    
+
 def interpol(*args):
     l = list(sorted(args))
     l.insert(0, (l[-1][0] - 1, l[-1][1]))
@@ -48,7 +48,7 @@ def _r_gallop(unicorn, data):
     phase = data.pose_phase
 
     fl, fr, bl, br = unicorn.legs
-    
+
     # approximated from http://commons.wikimedia.org/wiki/File:Horse_gif_slow.gif
     front_top = interpol((9/12., 74), (2.5/12., -33))
     front_bottom = interpol((2/12., 0), (6/12., -107), (8/12., -90), (10/12., 0))
@@ -80,13 +80,13 @@ def _walk(unicorn, data):
     phase = data.pose_phase
 
     fl, fr, bl, br = unicorn.legs
-    
+
     # approximated from http://de.wikipedia.org/w/index.php?title=Datei:Muybridge_horse_walking_animated.gif&filetimestamp=20061003154457
     front_top = interpol((6.5/9., 40), (2.5/9., -35))
     front_bottom = interpol((7/9., 0), (2/9., 0), (5/9., -70))
 
     back_top = interpol((1/9., -35), (4/9., 0), (6/12., 0))
-    
+
     back_bottom = interpol((5/9., 40), (9/9., 10))
 
     fr.knee.rotate(front_top(phase), fr.hip)
@@ -131,7 +131,7 @@ class UnicornData(Data):
                        "iris_sat": 80,
                        "pupil_size": 4,
                        "pose_sitting": 0, # DEPRECATED 0 means standing, 1 means sitting
-                       "pose_upright": 0, # DEPRECATED 
+                       "pose_upright": 0, # DEPRECATED
                        "hair_hue": 240,
                        "hair_sat": 80,
                        "hair_starts": [0, 20, 30, 40, 50, 60, 80, 100],
@@ -156,7 +156,7 @@ class UnicornData(Data):
 
     def randomize(self, randomizer):
         randint, random = randomizer.randint, randomizer.random
-        
+
         self.body_hue = randint(0, 359)
         self.body_sat = randint(50, 100)
         self.horn_hue = (self.body_hue + randint(60, 300)) % 360
@@ -187,7 +187,7 @@ class UnicornData(Data):
     def randomize2(self, randomizer):
         randint, random = randomizer.randint, randomizer.random
         self.hair_tip_lightnesses = [randint(40, 85) for h in self.hair_starts]
-        self.hair_straightnesses = [randint(-40, 40) for h in self.hair_starts] 
+        self.hair_straightnesses = [randint(-40, 40) for h in self.hair_starts]
         self.tail_start_size = randint(4, 10)
         self.tail_end_size = randint(10, 20)
         self.tail_length = randint(100, 150)
@@ -198,7 +198,7 @@ class UnicornData(Data):
         self.brow_mood = 2 * random() - 1
         self.neck_tilt = randint(-30, 30)
         self.face_tilt = randint(*sorted((self.neck_tilt // 3, self.neck_tilt // 4)))
-        
+
     def randomize3(self, randomizer):
         randint, random, choice = randomizer.randint, randomizer.random, randomizer.choice
 
@@ -211,10 +211,10 @@ def gammafunc(gamma):
     return result
 
 class Unicorn(Figure):
-    
+
     def __init__(self, data):
         super(Unicorn, self).__init__()
-        
+
         self.head = Ball((0,0,0), data.head_size, data.body_col(60))
         self.snout = Ball((-25, 60, 0), data.snout_size, data.body_col(80))
         self.snout.set_distance(data.snout_length, self.head)
@@ -222,14 +222,14 @@ class Unicorn(Figure):
         self.butt = Ball((235, 155, 0), data.butt_size, data.body_col(40))
         self.horn_onset = Ball((-22, -10, 0), data.horn_onset_size, data.horn_col(70))
         self.horn_onset.move_to_sphere(self.head)
-        
+
         self.horn_tip = Ball(self.horn_onset - (10, 0, 0), data.horn_tip_size, data.horn_col(90))
         self.horn_tip.set_distance(data.horn_length, self.horn_onset)
         self.horn_tip.rotate(data.horn_angle, self.horn_onset)
 
         self.create_eyes(data)
         self.create_legs(data)
-        
+
         pose_functions[data.pose_kind](self, data)
 
         self.create_mane(data)
@@ -240,7 +240,7 @@ class Unicorn(Figure):
         self.tail_end.set_distance(data.tail_length, self.tail_start)
         self.tail_end.rotate(data.tail_angle, self.tail_start)
         self.tail = NonLinBone(self.tail_start, self.tail_end, yfunc = gammafunc(data.tail_gamma))
-        
+
         square = gammafunc(2)
 
         self.add(Bone(self.snout, self.head),
@@ -270,7 +270,7 @@ class Unicorn(Figure):
 
         for leg in self.legs[:2]:
             self.add(*leg)
-            
+
         for leg in self.legs[2:]:
             self.add(*leg)
 
@@ -289,7 +289,7 @@ class Unicorn(Figure):
         self.pupil_right.move_to_sphere(self.iris_right)
 
         mood_delta = data.brow_mood * 3
-        
+
         self.brow_left_inner = Ball(self.eye_left - (0, 10, -data.brow_length), data.brow_size, data.hair_col(50))
         self.brow_left_inner.set_gap(5 + mood_delta, self.eye_left)
         self.brow_left_middle = Ball(self.eye_left - (0, 10, 0), data.brow_size, data.hair_col(70))
@@ -328,7 +328,7 @@ class Unicorn(Figure):
         hair_top = Ball(self.head - (-10, 5, 0), 8, None)
         hair_top.move_to_sphere(self.head)
         hair_bottom = Ball(self.shoulder - (-10, 15, 0), 8, None)
-        hair_bottom.move_to_sphere(self.shoulder)        
+        hair_bottom.move_to_sphere(self.shoulder)
         for start, gamma, length, angle, lightness, straightness in zip(
                         data.hair_starts, data.hair_gammas, data.hair_lengths,
                         data.hair_angles, data.hair_tip_lightnesses,
@@ -338,7 +338,7 @@ class Unicorn(Figure):
             hair_end = Ball((x + length, y, z + straightness), 4, data.hair_col(lightness))
             hair_end.rotate(-angle, hair_start)
             hair = NonLinBone(hair_start, hair_end, yfunc = gammafunc(gamma))
-            self.hairs.add(hair)        
+            self.hairs.add(hair)
 
 class Leg(list):
     def __init__(self, hip, knee, hoof):

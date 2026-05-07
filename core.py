@@ -1,21 +1,21 @@
 # Copyright 2010 Benjamin Dumke
-# 
+#
 # This file is part of Unicornify
-# 
+#
 # Unicornify is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
-# 
+#
 # Unicornify is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
-# 
+#
 # You should have received a copy of the NU Affero General Public License
 # along with Unicornify; see the file COPYING. If not, see
 # <http://www.gnu.org/licenses/>.
-    
+
 from math import sin, cos, pi, sqrt
 import functools
 from graphics import hls_to_rgb
@@ -39,7 +39,7 @@ class Data(object):
                 return func
             else:
                 raise KeyError("Unknown parameter %s" % attr)
-        
+
     def __setattr__(self, attr, value):
         if attr == "_data":
             super(Data, self).__setattr__(attr, value)
@@ -56,7 +56,7 @@ class Rect(object):
         self.right = right
         self.top = top
         self.bottom = bottom
-        
+
     def __add__(self, other):
         if other is None:
             return self
@@ -67,11 +67,12 @@ class Rect(object):
 
     def __radd__(self, other):
         return self + other
-        
+
     def intersects(self, other):
         hori = other.left <= self.left <= other.right or other.left <= self.right <= other.right or (self.left <= other.left and self.right >= other.right)
         vert = other.top <= self.top <= other.bottom or other.top <= self.bottom <= other.bottom or (self.top <= other.top and self.bottom >= other.bottom)
         return hori and vert
+
 
 class WorldView(object):
     """Note that projecting does not depend on shift, hence unlike
@@ -82,12 +83,13 @@ class WorldView(object):
         self.rotation_center = rotation_center
         self.shift = shift
 
+
 class Ball(object):
     def __init__(self, center, radius, color):
         self.center = tuple(map(float, center))
         self.radius = float(radius)
         self.color = color
-        
+
         self.projection = None
 
     def project(self, worldview):
@@ -114,28 +116,28 @@ class Ball(object):
         y2 = x1 * sin(rad) + y1 * cos(rad)
         z2 = z1
         self.center = tuple((x2, y2, z2)[reverse[i]] + other.center[i] for i in range(3))
-           
+
     def set_distance(self, distance, other):
         """Move this ball to have the given distance to "other" while not changing the
            direction. This is the distance of the ball centers."""
         span = tuple(c[0] - c[1] for c in zip(self.center, other.center))
         stretch = distance / sqrt(sum(c * c for c in span))
         self.center = tuple(c[0] + stretch * c[1] for c in zip(other.center, span))
-        
+
     def set_gap(self, gap, other):
         self.set_distance(gap + self.radius + other.radius, other)
-        
+
     def move_to_sphere(self, other):
         self.set_distance(other.radius, other)
-            
+
     def twoD(self):
-        return self.projection[:2]            
-            
+        return self.projection[:2]
+
     def draw(self, image, worldview):
         x, y = map(sum, zip(worldview.shift, self.twoD()))
         r = self.radius
         image.circle((x, y), r, self.color)
-        
+
     def __sub__(self, other):
         tup1 = self.center
         if isinstance(other, Ball):
@@ -143,24 +145,26 @@ class Ball(object):
         else:
             tup2 = other
         return tuple(c[0] - c[1] for c in zip(tup1, tup2))
-        
+
     def bounding(self):
         x, y, r = self.twoD() + (self.radius, )
         return Rect(x - r, y - r, x + r, y + r)
-        
+
     def balls(self):
         yield self
-        
+
     def sort(self, worldview):
         return
-        
+
+
 def identity(x):
     return x
+
 
 class Bone(object):
     def __init__(self, ball1, ball2):
         self._balls = [ball1, ball2]
-        
+
     def draw(self, image, worldview, xfunc = identity, yfunc = identity):
         """xfunc and / or yfunc should map [0,1] -> [0,1] if the parameter "step"
            should not be applied linearly to the coordinates. Note that these x and
@@ -190,7 +194,7 @@ class Bone(object):
         if xfunc is identity and yfunc is identity:
             if steps > 80: # based on tests, this number seems roughly to be the break-even point
                 image.connect_circles((x1, y1), self[0].radius, self[0].color, (x2, y2), self[1].radius, self[1].color)
-                return 
+                return
 
         for step in range(int(steps + 1)):
             factor = float(step) / steps
@@ -200,34 +204,36 @@ class Bone(object):
 
     def __getitem__(self, index):
         return self._balls[index]
-        
+
     def balls(self):
         return iter(self._balls)
-        
+
     def project(self, worldview):
         for ball in self._balls:
             ball.project(worldview)
-            
+
     def sort(self, worldview):
-        self._balls.sort(key = lambda ball: ball.projection[2], reverse = True)
-        
+        self._balls.sort(key=lambda ball: ball.projection[2], reverse = True)
+
     def span(self):
         return self[1] - self[0]
-        
+
     def bounding(self):
         return self[0].bounding() + self[1].bounding()
+
 
 def reverse(func):
     def result(v):
         return 1 - func(1 - v)
     return result
 
-class NonLinBone(Bone):        
+
+class NonLinBone(Bone):
     def __init__(self, ball1, ball2, xfunc = identity, yfunc = identity):
         self._balls = [ball1, ball2]
         self._xfunc = xfunc
         self._yfunc = yfunc
-        
+
     def draw(self, image, worldview):
         super(NonLinBone, self).draw(image, worldview, self._xfunc, self._yfunc)
 
@@ -238,19 +244,19 @@ class NonLinBone(Bone):
             self._xfunc = reverse(self._xfunc)
             self._yfunc = reverse(self._yfunc)
 
+
 def compare(worldview, first, second):
     """Compares two objects (balls or bones) to determine which one is behind the other.
        Note that although the worldview must be given, the objects still must
        have already been projected."""
-       
+
     # FIXME: currently, this should be okay most of the time, because the
-    # only subfigure used so far is unicorn.hairs. 
+    # only subfigure used so far is unicorn.hairs.
     if isinstance(first, Figure):
         return 1
     elif isinstance(second, Figure):
         return -1
-    
-       
+
     if isinstance(first, Ball) and isinstance(second, Ball):
         return cmp(first.projection[2], second.projection[2])
     elif isinstance(first, Bone) and isinstance(second, Ball):
@@ -288,41 +294,40 @@ def compare(worldview, first, second):
                         result = compare(worldview, ball1, ball2)
                         if result != 0:
                             return result
-        
+
             # find the point where the bones intersect *on the screen*. t1
             # and t2 are the parameters such that, say, ball1_x + t1 * (ball2_x-ball1_x)
             # is the x-coordinate refereced by t1. t_ < 0 or t_ > 1 means
             # that the "intersection" isn't on the line itself.
-            
+
             s1x, s1y, s1z = first[0].projection
             d1x, d1y, d1z = (first[1].projection[i] - first[0].projection[i] for i in (0, 1, 2))
             s2x, s2y, s2z = second[0].projection
             d2x, d2y, d2z = (second[1].projection[i] - second[0].projection[i] for i in (0, 1, 2))
-            
+
             # this number is zero if and only if the lines are parallel
             # (again, their screen projections -- not neccessarily
             # parallel in 3d space)
             denom = d1x * d2y - d2x * d1y
-            
+
             if abs(denom) < 1e-4:
-                return 0 #FIXME later?
-                
+                return 0  # FIXME later?
+
             t2 = (d1y * (s2x - s1x) - d1x * (s2y - s1y)) / denom
             if abs(d1x) > 1e-4:
                 t1 = (s2x + t2 * d2x - s1x) / d1x
             elif abs(d1y) > 1e-4:
                 t1 = (s2y + t2 * d2y - s1y) / d1y
             else:
-                return 0 #FIXME later?
-            
-                
+                return 0  # FIXME later?
+
             if t1 < -.5 or t1 > 1.5 or t2 < -1 or t2 > 2:
                 return 0
-                
-                
-            return cmp(s1z + t1 * d1z, s2z + t2 * d2z) #FIXME: zero case?
+
+            return cmp(s1z + t1 * d1z, s2z + t2 * d2z)  # FIXME: zero case?
     else:
         raise ValueError("Can't compare %s and %s" % (first, second))
+
 
 def two_combinations(l):
     """itertools.combinations was introduced in Python 2.6; the app engine
@@ -333,28 +338,31 @@ def two_combinations(l):
 
 # used in Figure.sort() to determine which thing should be drawn next if
 # it's not possible to fullfill all draw_after constraints
+
+
 def evilness(thing):
     z = thing.projection[2] if isinstance(thing, Ball) else max(b.projection[2] for b in thing.balls())
     return -z
 
+
 class Figure(object):
     def __init__(self):
         self._things = []
-        
+
     def add(self, *things):
         self._things.extend(things)
-        
+
     def project(self, worldview):
         for thing in self._things:
             thing.project(worldview)
-            
+
     def sort(self, worldview):
         """this assumes that projection has already happened!"""
         comp = functools.partial(compare, worldview)
-        
+
         # values of this dict are lists of all things that have
         # to be drawn before the corresponding key
-        draw_after = dict((thing, []) for thing in self._things) 
+        draw_after = dict((thing, []) for thing in self._things)
 
         for first, second in two_combinations(self._things):
             if second not in draw_after[first] and first not in draw_after[second]:
@@ -365,7 +373,7 @@ class Figure(object):
                         draw_after[first].append(second)
                     elif c > 0:
                         draw_after[second].append(first)
-        
+
         # this is pretty much the algorithm from http://stackoverflow.com/questions/952302/
         sorted_things = []
         queue = []
@@ -401,12 +409,12 @@ class Figure(object):
                         if not deps:
                             queue.append(thing)
                             del draw_after[thing]
-                
-        self._things = sorted_things            
+
+        self._things = sorted_things
 
         for thing in self._things:
             thing.sort(worldview)
-            
+
     def draw(self, image, worldview):
         viewrect = Rect(*(tuple(-c for c in worldview.shift) + tuple(image.size - c for c in worldview.shift)))
         for thing in self._things:
@@ -423,12 +431,11 @@ class Figure(object):
            on of its bones. It returns a set; i.e. each ball is returned
            exactly once."""
         return set(self.balls())
-        
+
     def scale(self, factor):
         for ball in self.ball_set():
             ball.radius *= factor
             ball.center = tuple(c * factor for c in ball.center)
-            
+
     def bounding(self):
         return sum((thing.bounding() for thing in self._things), None)
-        
